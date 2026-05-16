@@ -2,15 +2,14 @@
 
 ## 📋 Descripción
 
-Despliegue contenerizado de una aplicación de microservicios en AWS EC2 usando Docker, Docker Compose y CI/CD con GitHub Actions.
+Despliegue contenerizado de una aplicación en AWS EC2 usando Docker, Docker Compose y CI/CD con GitHub Actions.
 
-### Microservicios
+### Servicios
 | Servicio | Puerto | Descripción |
 |---|---|---|
-| `backend-ventas` | 8080 | API REST Spring Boot - gestión de ventas |
 | `backend-despachos` | 8081 | API REST Spring Boot - gestión de despachos |
-| `frontend-despacho` | 80 | React + Vite servido con Nginx |
-| `db` | 3306 | MySQL 8.0 - base de datos compartida |
+| `frontend` | 80 | React + Vite servido con Nginx |
+| `db` | 3306 | MySQL 8.0 - base de datos |
 
 ---
 
@@ -33,7 +32,6 @@ docker-compose up --build
 
 ### 3. Verificar que todo funciona
 - Frontend: http://localhost
-- API Ventas: http://localhost:8080/swagger-ui.html
 - API Despachos: http://localhost:8081/swagger-ui.html
 
 ### 4. Bajar los contenedores
@@ -47,16 +45,16 @@ docker-compose down -v
 
 ## 🗄️ Base de Datos
 
-### Estructura (Motor → Driver → Cliente → BD → Tablas)
+### Estructura (Motor → Driver → Cliente → BD → Tabla)
 | Paso | Componente | Valor |
 |---|---|---|
 | Motor | MySQL | versión 8.0 (imagen Docker) |
 | Driver | JDBC Driver | `com.mysql.cj.jdbc.Driver` (pom.xml) |
 | Cliente | Spring Boot | conecta via `application.properties` con variables de entorno |
 | BD | tienda_db | creada automáticamente por `init.sql` |
-| Tablas | venta, despacho | creadas con datos de prueba |
+| Tabla | despacho | creada con datos de prueba |
 
-El archivo `db/init.sql` crea las tablas y los datos automáticamente la primera vez.
+El archivo `db/init.sql` crea la tabla y los datos automáticamente la primera vez.
 
 ### Persistencia
 Se usa un **named volume** (`tienda-db-data`) para que los datos de MySQL no se pierdan al reiniciar contenedores. Se eligió named volume sobre bind mount porque es portable entre equipos y Docker lo gestiona automáticamente.
@@ -73,7 +71,7 @@ git push origin deploy
        ↓
 GitHub Actions (.github/workflows/deploy.yml)
        ↓
-1. Build imagen Docker (backend-ventas, backend-despachos, frontend)
+1. Build imagen Docker (backend-despachos, frontend)
 2. Push imágenes a Amazon ECR
 3. SSH a EC2 → pull imagen nueva → reiniciar contenedor
 ```
@@ -105,7 +103,7 @@ Internet
 [EC2-Frontend]  ← Subred PÚBLICA  (puerto 80)
     │
     ▼ (red privada)
-[EC2-Backend]   ← Subred PRIVADA  (puertos 8080, 8081)
+[EC2-Backend]   ← Subred PRIVADA  (puerto 8081)
     │
     ▼
 [EC2-Datos]     ← Subred PRIVADA  (puerto 3306)
@@ -116,10 +114,10 @@ Solo el Frontend es accesible desde Internet. El Backend y la BD están en subre
 ---
 
 ## 📝 Historial de commits
-- `feat: add Dockerfile multi-stage backend-ventas`
 - `feat: add Dockerfile multi-stage backend-despachos`
 - `feat: add Dockerfile frontend with nginx`
 - `feat: add docker-compose with volumes and networks`
-- `feat: add init.sql with tables and test data`
+- `feat: add init.sql with table despacho and test data`
 - `feat: add GitHub Actions CI/CD pipeline`
+- `fix: remove backend-ventas, keep only backend-despachos`
 - `docs: update README with full documentation`

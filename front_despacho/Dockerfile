@@ -10,12 +10,10 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# ARGs para las URLs de los backends (se pasan desde docker-compose)
-ARG VITE_API_VENTAS=http://localhost:8080
+# ARG para la URL del backend despachos (se pasa desde docker-compose)
 ARG VITE_API_DESPACHOS=http://localhost:8081
 
-# Exportar como variables de entorno para que Vite las use en build
-ENV VITE_API_VENTAS=$VITE_API_VENTAS
+# Exportar como variable de entorno para que Vite la use en build
 ENV VITE_API_DESPACHOS=$VITE_API_DESPACHOS
 
 # Copiar package.json primero para cachear dependencias

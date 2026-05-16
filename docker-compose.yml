@@ -2,10 +2,9 @@ version: "3.9"
 
 # ============================================================
 # ARQUITECTURA:
-#   - db          → MySQL 8.0  (subred privada, solo back accede)
-#   - backend-ventas  → Spring Boot puerto 8080
+#   - db                → MySQL 8.0  (subred privada)
 #   - backend-despachos → Spring Boot puerto 8081
-#   - frontend    → React/Vite con Nginx puerto 80
+#   - frontend          → React/Vite con Nginx puerto 80
 #
 # PERSISTENCIA: named volume "db-data" para que los datos
 # no se pierdan al reiniciar contenedores (named volume
@@ -32,8 +31,8 @@ services:
     ports:
       - "3306:3306"
     volumes:
-      - db-data:/var/lib/mysql          # Named volume → persistencia
-      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql  # Script inicial
+      - db-data:/var/lib/mysql
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - red-privada
     healthcheck:
@@ -41,30 +40,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-
-  # ----------------------------------------------------------
-  # BACKEND VENTAS → puerto 8080
-  # ----------------------------------------------------------
-  backend-ventas:
-    build:
-      context: ./back-Ventas_SpringBoot/Springboot-API-REST 
-      dockerfile: Dockerfile
-    container_name: tienda-backend-ventas
-    restart: always
-    environment:
-      DB_ENDPOINT: db           # nombre del servicio = hostname interno
-      DB_PORT: 3306
-      DB_NAME: tienda_db
-      DB_USERNAME: tienda_user
-      DB_PASSWORD: tienda_pass
-    ports:
-      - "8080:8080"
-    depends_on:
-      db:
-        condition: service_healthy
-    networks:
-      - red-privada
-      - red-publica
 
   # ----------------------------------------------------------
   # BACKEND DESPACHOS → puerto 8081
@@ -98,14 +73,12 @@ services:
       context: ./front_despacho
       dockerfile: Dockerfile
       args:
-        VITE_API_VENTAS: http://backend-ventas:8080
         VITE_API_DESPACHOS: http://backend-despachos:8081
     container_name: tienda-frontend
     restart: always
     ports:
       - "80:80"
     depends_on:
-      - backend-ventas
       - backend-despachos
     networks:
       - red-publica

@@ -3,7 +3,7 @@ name: CI/CD - Build, Push ECR y Deploy en EC2
 on:
   push:
     branches:
-      - deploy
+      - main
 
 jobs:
   # ----------------------------------------------------------
@@ -37,12 +37,12 @@ jobs:
           docker build -t $ECR_REGISTRY/tienda-despachos:latest ./back-Despachos_SpringBoot/Springboot-API-REST-DESPACHO
           docker push $ECR_REGISTRY/tienda-despachos:latest
 
-      # 2. Build y Push -> Backend Ventas
+      # 2. Build y Push -> Backend Ventas (Ruta corregida a tu entorno real)
       - name: Build y Push Backend Ventas
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
-          docker build -t $ECR_REGISTRY/tienda-ventas:latest ./back-Ventas_SpringBoot/Springboot-API-REST-VENTAS
+          docker build -t $ECR_REGISTRY/tienda-ventas:latest ./back-Ventas_SpringBoot/Springboot-API-REST
           docker push $ECR_REGISTRY/tienda-ventas:latest
 
       # 3. Build y Push -> Frontend (Inyectando las IPs públicas reales de la EC2)
@@ -104,7 +104,7 @@ jobs:
             aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | \
               docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
             
-            # Descargar imágenes nuevas, detener contenedores anteriores y limpiar volúmenes/redes muertas
+            # Descargar imágenes microservicios, recrear contenedores de forma limpia
             docker compose pull
             docker compose down
             docker compose up -d

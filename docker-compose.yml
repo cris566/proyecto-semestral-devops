@@ -1,0 +1,115 @@
+version: "3.9"
+
+# ============================================================
+# ARQUITECTURA EVALUACIÓN PARCIAL N°2 - DUOC UC (UNIFICADA)
+# ============================================================
+
+services:
+
+  # ----------------------------------------------------------
+  # MOTOR: MySQL 8.0 (Tus credenciales personalizadas se mantienen intactas)
+  # ----------------------------------------------------------
+  db:
+    image: mysql:8.0
+    container_name: tienda-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root1234
+      MYSQL_DATABASE: tienda_db
+      MYSQL_USER: tienda_user
+      MYSQL_PASSWORD: tienda_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - db-data:/var/lib/mysql
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - red-privada
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ----------------------------------------------------------
+  # BACKEND VENTAS → puerto 8080
+  # ----------------------------------------------------------
+  backend-ventas:
+    build:
+      context: ./back-Ventas_SpringBoot/Springboot-API-REST
+      dockerfile: Dockerfile
+    container_name: tienda-backend-ventas
+    restart: always
+    environment:
+      DB_ENDPOINT: db
+      DB_PORT: 3306
+      DB_NAME: tienda_db
+      DB_USERNAME: tienda_user
+      DB_PASSWORD: tienda_pass
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - red-privada
+      - red-publica
+
+  # ----------------------------------------------------------
+  # BACKEND DESPACHOS → puerto 8081
+  # ----------------------------------------------------------
+  backend-despachos:
+    build:
+      context: ./back-Despachos_SpringBoot/Springboot-API-REST-DESPACHO
+      dockerfile: Dockerfile
+    container_name: tienda-backend-despachos
+    restart: always
+    environment:
+      DB_ENDPOINT: db
+      DB_PORT: 3306
+      DB_NAME: tienda_db
+      DB_USERNAME: tienda_user
+      DB_PASSWORD: tienda_pass
+    ports:
+      - "8081:8081"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - red-privada
+      - red-publica
+
+  # ----------------------------------------------------------
+  # FRONTEND → CORREGIDO PARA INTEGRACIÓN DINÁMICA FRONT-BACK
+  # ----------------------------------------------------------
+  frontend:
+    build:
+      context: ./front_despacho
+      dockerfile: Dockerfile
+      args:
+        # Usamos la sintaxis ${VARIABLE:-default} para que si estás en local use localhost,
+        # pero en el servidor AWS tome la IP pública real de la instancia de forma automatizada.
+        VITE_API_VENTAS: http://${EC2_PUBLIC_IP:-localhost}:8080
+        VITE_API_DESPACHOS: http://${EC2_PUBLIC_IP:-localhost}:8081
+    container_name: tienda-frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend-ventas
+      - backend-despachos
+    networks:
+      - red-publica
+
+# ============================================================
+# PERSISTENCIA Y REDES (Sin cambios, están excelentes)
+# ============================================================
+volumes:
+  db-data:
+    name: tienda-db-data
+
+networks:
+  red-privada:
+    driver: bridge
+  red-publica:
+    driver: bridge

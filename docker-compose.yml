@@ -89,8 +89,8 @@ services:
       args:
         # Usamos la sintaxis ${VARIABLE:-default} para que si estás en local use localhost,
         # pero en el servidor AWS tome la IP pública real de la instancia de forma automatizada.
-        VITE_API_VENTAS: http://${EC2_PUBLIC_IP:-localhost}:8080
-        VITE_API_DESPACHOS: http://${EC2_PUBLIC_IP:-localhost}:8081
+        VITE_API_VENTAS: http://3.92.33.106:8080
+        VITE_API_DESPACHOS: http://3.92.33.106:8081
     container_name: tienda-frontend
     restart: always
     ports:

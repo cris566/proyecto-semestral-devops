@@ -63,11 +63,14 @@ docker compose up -d --build
 
 ### 3. Verificar accesos
 
-| Servicio | URL |
-|---|---|
-| Frontend | http://localhost |
-| API Ventas | http://localhost:8080/api/v1/ventas |
-| API Despachos | http://localhost:8081/api/v1/despachos |
+| Entorno | Servicio | URL |
+|---|---|---|
+| **Local** | Frontend | http://localhost |
+| **Local** | API Ventas | http://localhost:8080/api/v1/ventas |
+| **Local** | API Despachos | http://localhost:8081/api/v1/despachos |
+| **AWS Producción** | Frontend | http://3.92.33.106 |
+| **AWS Producción** | API Ventas | http://3.92.33.106:8080/api/v1/ventas |
+| **AWS Producción** | API Despachos | http://3.92.33.106:8081/api/v1/despachos |
 
 ### 4. Apagar el entorno
 

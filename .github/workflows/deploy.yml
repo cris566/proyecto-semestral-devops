@@ -7,7 +7,7 @@ on:
 
 jobs:
   # ----------------------------------------------------------
-  # JOB 1: BUILD + PUSH de los 3 contenedores a Amazon ECR
+  # JOB 1: BUILD + PUSH de los 4 contenedores a Amazon ECR
   # ----------------------------------------------------------
   build-and-push:
     name: Build y Push a ECR
@@ -29,7 +29,15 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      # 1. Build y Push -> Backend Despachos
+      # 1. Build y Push -> Base de Datos
+      - name: Build y Push Base de Datos
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          docker build -t $ECR_REGISTRY/tienda-db:latest ./db
+          docker push $ECR_REGISTRY/tienda-db:latest
+
+      # 2. Build y Push -> Backend Despachos
       - name: Build y Push Backend Despachos
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
@@ -37,7 +45,7 @@ jobs:
           docker build -t $ECR_REGISTRY/tienda-backend-despachos:latest ./back-Despachos_SpringBoot/Springboot-API-REST-DESPACHO
           docker push $ECR_REGISTRY/tienda-backend-despachos:latest
 
-      # 2. Build y Push -> Backend Ventas (Ruta corregida a tu entorno real)
+      # 3. Build y Push -> Backend Ventas
       - name: Build y Push Backend Ventas
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
@@ -45,14 +53,14 @@ jobs:
           docker build -t $ECR_REGISTRY/tienda-backend-ventas:latest ./back-Ventas_SpringBoot/Springboot-API-REST
           docker push $ECR_REGISTRY/tienda-backend-ventas:latest
 
-      # 3. Build y Push -> Frontend (Inyectando las IPs públicas reales de la EC2)
+      # 4. Build y Push -> Frontend (IP dinámica desde secrets)
       - name: Build y Push Frontend
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
           docker build \
-            --build-arg VITE_API_VENTAS="http://3.92.33.106:8080" \
-            --build-arg VITE_API_DESPACHOS="http://3.92.33.106:8081" \
+            --build-arg VITE_API_VENTAS="http://${{ secrets.EC2_HOST_FRONTEND }}:8080" \
+            --build-arg VITE_API_DESPACHOS="http://${{ secrets.EC2_HOST_FRONTEND }}:8081" \
             -t $ECR_REGISTRY/tienda-frontend:latest ./front_despacho
           docker push $ECR_REGISTRY/tienda-frontend:latest
 
@@ -80,7 +88,7 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      # Copiar archivos de configuración esenciales a la máquina virtual (EC2)
+      # Copiar archivos de configuración a EC2
       - name: Transferir archivos de configuración a EC2
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -90,7 +98,7 @@ jobs:
           source: "docker-compose.yml,db/init.sql"
           target: "/home/ec2-user/app/"
 
-      # Ejecutar el despliegue limpio en AWS
+      # Ejecutar el despliegue limpio en EC2
       - name: Levantar Stack de Servicios en EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -99,14 +107,17 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             cd /home/ec2-user/app/
-            
-            # Autenticar Docker con Amazon ECR dentro de la instancia de AWS para poder descargar las imágenes
+
+            # Autenticar Docker con Amazon ECR
             aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | \
               docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
-            
-            # Descargar imágenes microservicios, recrear contenedores de forma limpia
+
+            # Inyectar IP pública dinámica para el docker-compose
+            export ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}
+
+            # Descargar imágenes y recrear contenedores
             docker compose pull
             docker compose down
             docker compose up -d
-            
-            echo "🚀 ¡Infraestructura de microservicios actualizada con éxito mediante GitHub Actions!"
+
+            echo "🚀 ¡Infraestructura de microservicios actualizada con éxito!"

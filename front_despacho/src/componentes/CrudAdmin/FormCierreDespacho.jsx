@@ -7,34 +7,48 @@ export const FormCierreDespacho = ({ despacho, onClose }) => {
 
   const onSubmit = async (data) => {
     console.log("onSubmit ejecutado");
+    
+    // CORRECCIÓN 1: Convertir explícitamente el valor del select a Booleano real
+    const esDespachado = data.despachado === "true";
+
     const jsonData = {
-      intento: data.intento,
-      despachado: data.despachado,
+      intento: Number(data.intento), // Aseguramos que sea número
+      despachado: esDespachado,
     };
 
-    console.log("Datos del formulario:", jsonData);
+    console.log("Datos del formulario procesados:", jsonData);
 
     try {
       await axios.put(
         `${import.meta.env.VITE_API_DESPACHOS}/api/v1/despachos/${despacho.idDespacho}`,
         jsonData,
         {
-          headers:{
+          headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
-      }
+          }
         }
       );
+
+      // CORRECCIÓN 2: El modal se cierra tras presionar "Aceptar" en la alerta exitosa
       Swal.fire({
         title: "Despacho modificado 🛻!",
         text: "El despacho ha sido modificado exitosamente",
         icon: "success",
         confirmButtonText: "Aceptar",
+      }).then(() => {
+        onClose(); // Se cierra aquí de forma segura
       });
+
     } catch (error) {
       console.error("Error en la solicitud:", error);
+      Swal.fire({
+        title: "Error",
+        text: "No se pudo actualizar el despacho. Revisa la consola.",
+        icon: "error",
+        confirmButtonText: "Entendido",
+      });
     }
-    onClose();
   };
 
   return (
@@ -46,85 +60,92 @@ export const FormCierreDespacho = ({ despacho, onClose }) => {
         <div className="mx-auto text-3xl font-bold mb-10 text-teal-600">
           Editar y cierre de despacho
         </div>
+        
         <div className="mb-5">
           <label className="block font-bold mb-2">ID despacho</label>
           <input
             disabled={true}
             type="text"
-            placeholder="Ingresa fecha de despacho"
-            className="border border-gray-300 rounded-lg block w-full p-1 text-slate-400"
+            className="border border-gray-300 rounded-lg block w-full p-1 text-slate-400 bg-gray-100"
             value={despacho.idDespacho}
           />
         </div>
+
         <div className="mb-5">
           <label className="block font-bold mb-2">Fecha despacho</label>
           <input
             type="date"
-            placeholder="Elige patente de camión"
-            className="border border-gray-300 rounded-lg block w-full text-slate-400 p-1"
+            className="border border-gray-300 rounded-lg block w-full text-slate-400 p-1 bg-gray-100"
             value={despacho.fechaDespacho}
             disabled={true}
           />
         </div>
+
         <div className="mb-5">
           <label className="block font-bold mb-2">Patente Camión</label>
           <input
             type="text"
             disabled={true}
             value={despacho.patenteCamion}
-            className="border border-gray-300 rounded-lg block w-full text-slate-400 p-1"
+            className="border border-gray-300 rounded-lg block w-full text-slate-400 p-1 bg-gray-100"
           />
         </div>
+
         <div className="mb-5">
           <label className="block font-bold mb-2">Intentos de entrega</label>
           <input
             type="number"
             defaultValue={despacho.intento}
-            className="border border-gray-300 rounded-lg block w-full  p-1"
+            className="border border-gray-300 rounded-lg block w-full p-1"
             {...register("intento", { required: true })}
           />
         </div>
+
         <div className="mb-5">
           <label className="block font-bold mb-2">Despacho entregado</label>
+          {/* Seteamos el defaultValue dinámico según el estado real que venga del prop despacho */}
           <select
-            defaultValue={false}
-            className="border border-gray-300 rounded-lg block w-full  p-1"
+            defaultValue={despacho.despachado ? "true" : "false"}
+            className="border border-gray-300 rounded-lg block w-full p-1"
             {...register("despachado", { required: true })}
           >
-            <option value={false}>Despacho abierto</option>
-            <option value={true}>Cerrar despacho</option>
+            <option value="false">Despacho abierto</option>
+            <option value="true">Cerrar despacho</option>
           </select>
         </div>
+
         <div className="mb-5">
           <label className="block font-bold mb-2">ID Compra</label>
           <input
             type="text"
-            className="border border-gray-300 rounded-lg block w-full text-slate-400 p-1"
+            className="border border-gray-300 rounded-lg block w-full text-slate-400 p-1 bg-gray-100"
             disabled={true}
             value={despacho.idCompra}
           />
         </div>
+
         <div className="mb-5">
           <label className="block font-bold mb-2">Dirección Compra</label>
           <input
             type="text"
-            className="border border-gray-300 rounded-lg block w-full text-slate-400 p-1"
+            className="border border-gray-300 rounded-lg block w-full text-slate-400 p-1 bg-gray-100"
             disabled={true}
             value={despacho.direccionCompra}
           />
         </div>
+
         <div className="mb-5">
           <label className="block font-bold mb-2">Valor Compra</label>
           <input
             type="text"
-            className="border border-gray-300 rounded-lg block w-full text-slate-400 p-1"
+            className="border border-gray-300 rounded-lg block w-full text-slate-400 p-1 bg-gray-100"
             disabled={true}
             value={despacho.valorCompra}
           />
         </div>
 
         <button
-          className="py-6 px-14 rounded-lg bg-teal-600 text-white font-bold mb-14"
+          className="py-6 px-14 rounded-lg bg-teal-600 text-white font-bold mb-14 hover:bg-teal-700 transition-colors"
           type="submit"
         >
           Modificar Despacho

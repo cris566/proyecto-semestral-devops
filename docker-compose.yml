@@ -4,7 +4,7 @@ services:
 
   # Base de Datos - imagen desde ECR
   db:
-    image: 559315719674.dkr.ecr.us-east-1.amazonaws.com/tienda-db:latest
+    image: ${ECR_REGISTRY}/tienda-db:latest
     container_name: tienda-db
     restart: always
     environment:
@@ -19,14 +19,15 @@ services:
     networks:
       - red-privada
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      # CORRECCIÓN: Se agrega usuario y contraseña para asegurar que el ping no falle por permisos
+      test: ["CMD", "mysqladmin", "ping", "-u", "root", "-proot1234", "-h", "localhost"]
       interval: 10s
       timeout: 5s
       retries: 5
 
   # Backend Ventas
   backend-ventas:
-    image: 559315719674.dkr.ecr.us-east-1.amazonaws.com/tienda-backend-ventas:latest
+    image: ${ECR_REGISTRY}/tienda-backend-ventas:latest
     container_name: tienda-backend-ventas
     restart: always
     environment:
@@ -46,7 +47,7 @@ services:
 
   # Backend Despachos
   backend-despachos:
-    image: 559315719674.dkr.ecr.us-east-1.amazonaws.com/tienda-backend-despachos:latest
+    image: ${ECR_REGISTRY}/tienda-backend-despachos:latest
     container_name: tienda-backend-despachos
     restart: always
     environment:
@@ -66,7 +67,7 @@ services:
 
   # Frontend
   frontend:
-    image: 559315719674.dkr.ecr.us-east-1.amazonaws.com/tienda-frontend:latest
+    image: ${ECR_REGISTRY}/tienda-frontend:latest
     container_name: tienda-frontend
     restart: always
     ports:

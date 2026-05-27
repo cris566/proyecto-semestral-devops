@@ -7,6 +7,7 @@ export const FormDespacho = ({ venta, onClose }) => {
 
   const onSubmit = async (data) => {
     console.log("onSubmit ejecutado");
+    
     const jsonData = {
       fechaDespacho: data.fechaDespacho,
       patenteCamion: data.patenteCamion,
@@ -21,37 +22,54 @@ export const FormDespacho = ({ venta, onClose }) => {
       despachoGenerado: true,
     };
 
-    console.log("Datos del formulario:", jsonData);
-
     try {
+      // 1. Intentamos actualizar el estado de la venta
       await axios.put(
         `${import.meta.env.VITE_API_VENTAS}/api/v1/ventas/${venta.idVenta}`,
         jsonDataSales,
         {
-          headers:{
+          headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
-      }
+          }
         }
       );
-      await axios.post(`${import.meta.env.VITE_API_DESPACHOS}/api/v1/despachos`, 
-        jsonData, {
-        headers:{
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-    }
-      });
+
+      // 2. Solo si el PUT fue exitoso, procedemos a crear el despacho
+      await axios.post(
+        `${import.meta.env.VITE_API_DESPACHOS}/api/v1/despachos`, 
+        jsonData, 
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          }
+        }
+      );
+
+      // 3. Alerta de éxito controlada
       Swal.fire({
         title: "Despacho registrado 🛻!",
         text: "El despacho ha sido generado con éxito en la base de datos",
         icon: "success",
         confirmButtonText: "Aceptar",
+      }).then(() => {
+        onClose(); // Se cierra de manera segura solo al dar clic en Aceptar
       });
+
     } catch (error) {
-      console.error("Error en la solicitud:", error);
+      console.error("Error en la transacción de despacho:", error);
+      
+      // Alerta de error clara para el usuario
+      Swal.fire({
+        title: "Error en el proceso",
+        text: "Hubo un problema al comunicar los servicios. Los cambios no se guardaron.",
+        icon: "error",
+        confirmButtonText: "Entendido",
+      });
     }
-    onClose();
   };
+
   return (
     <>
       <form
@@ -61,15 +79,16 @@ export const FormDespacho = ({ venta, onClose }) => {
         <div className="mx-auto text-3xl font-bold mb-10 text-teal-600">
           Ingreso de orden de despacho
         </div>
+
         <div className="mb-5">
           <label className="block font-bold mb-2">Fecha de despacho</label>
           <input
             type="date"
-            placeholder="Ingresa fecha de despacho"
             className="border border-gray-300 rounded-lg block w-full p-1"
             {...register("fechaDespacho", { required: true })}
           />
         </div>
+
         <div className="mb-5">
           <label className="block font-bold mb-2">Patente de camión</label>
           <input
@@ -79,6 +98,7 @@ export const FormDespacho = ({ venta, onClose }) => {
             {...register("patenteCamion", { required: true })}
           />
         </div>
+
         <div className="mb-5">
           <label className="block font-bold mb-2">
             Orden de compra asociado
@@ -87,30 +107,32 @@ export const FormDespacho = ({ venta, onClose }) => {
             type="number"
             disabled={true}
             value={venta.idVenta}
-            className="border border-gray-300 rounded-lg block w-full text-slate-400 p-1"
+            className="border border-gray-300 rounded-lg block w-full text-slate-400 p-1 bg-gray-100"
           />
         </div>
+
         <div className="mb-5">
           <label className="block font-bold mb-2">Dirección de entrega</label>
           <input
             type="text"
             disabled={true}
             value={venta.direccionCompra}
-            className="border border-gray-300 rounded-lg block w-full text-slate-400 p-1"
+            className="border border-gray-300 rounded-lg block w-full text-slate-400 p-1 bg-gray-100"
           />
         </div>
+
         <div className="mb-5">
           <label className="block font-bold mb-2">Valor de compra</label>
           <input
             type="number"
             value={venta.valorCompra}
-            className="border border-gray-300 rounded-lg block w-full text-slate-400 p-1"
+            className="border border-gray-300 rounded-lg block w-full text-slate-400 p-1 bg-gray-100"
             disabled={true}
           />
         </div>
 
         <button
-          className="py-6 px-14 rounded-lg bg-teal-600 text-white font-bold mb-14"
+          className="py-6 px-14 rounded-lg bg-teal-600 text-white font-bold mb-14 hover:bg-teal-700 transition-colors"
           type="submit"
         >
           Asignar despacho

@@ -11,7 +11,7 @@ export const TableCompras = () => {
   // CORRECCIÓN: Limpieza de Async/Await + Manejo de errores básico
   const compras = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_VENTAS}/api/v1/ventas`, {
+      const response = await axios.get(`http://10.0.2.24:8080/api/v1/ventas`, {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json'

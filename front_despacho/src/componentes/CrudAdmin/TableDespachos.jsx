@@ -11,7 +11,7 @@ export const TableDespachos = () => {
   // CORRECCIÓN: Estructura Async/Await limpia con manejo de errores
   const obtenerDespachos = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_DESPACHOS}/api/v1/despachos`, {
+      const response = await axios.get(`http://10.0.2.24:8081/api/v1/despachos`, {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json'

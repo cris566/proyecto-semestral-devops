@@ -5,7 +5,7 @@
 
 Este proyecto consiste en el diseño, contenerización y despliegue automatizado de una arquitectura basada en microservicios para la plataforma del sistema semestral. El ecosistema está compuesto por una interfaz de usuario en React que interactúa con dos servicios Backend independientes desarrollados en Spring Boot, acoplados a un motor de base de datos relacional persistente.
 
-La solución se encuentra completamente orquestada localmente mediante **Docker Compose** y automatizada para producción en la nube de **AWS (Amazon EC2)** mediante un flujo de Integración y Despliegue Continuo (CI/CD) implementado en **GitHub Actions** con almacenamiento de imágenes en **Amazon ECR**.
+La solución se encuentra completamente orquestada localmente mediante **Docker Compose** y automatizada para producción en la nube de **AWS (Amazon EC2)** mediante un flujo de Integración y Despliegue Continuo (CI/CD) implementado en **GitHub Actions** con almacenamiento de imágenes en **Amazon ECR**.re
 
 ---
 

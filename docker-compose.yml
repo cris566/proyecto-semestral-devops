@@ -66,13 +66,8 @@ services:
       - red-publica
 
   # Frontend
-  # Frontend
   frontend:
-    build:
-      context: ./front_despacho
-      args:
-        - VITE_API_VENTAS=http://100.55.38.248:8080
-        - VITE_API_DESPACHOS=http://100.55.38.248:8081
+    image: ${ECR_REGISTRY}/tienda-frontend:latest
     container_name: tienda-frontend
     restart: always
     ports:

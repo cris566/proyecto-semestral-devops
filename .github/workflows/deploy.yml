@@ -53,12 +53,12 @@ jobs:
           docker build -t $ECR_REGISTRY/tienda-backend-ventas:latest ./back-Ventas_SpringBoot/Springboot-API-REST
           docker push $ECR_REGISTRY/tienda-backend-ventas:latest
 
-      # 4. Build y Push -> Frontend (IP dinámica desde secrets)
+      # 4. Build y Push -> Frontend (Corregido usando solo un Secreto de IP)
       - name: Build y Push Frontend
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
-          docker build \
+          docker build --no-cache \
             --build-arg VITE_API_VENTAS="http://${{ secrets.EC2_HOST_FRONTEND }}:8080" \
             --build-arg VITE_API_DESPACHOS="http://${{ secrets.EC2_HOST_FRONTEND }}:8081" \
             -t $ECR_REGISTRY/tienda-frontend:latest ./front_despacho
@@ -88,7 +88,7 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      # Copiar archivos de configuración a EC2
+      # Copiar archivos de configuración a EC2 de forma limpia
       - name: Transferir archivos de configuración a EC2
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -101,23 +101,33 @@ jobs:
       # Ejecutar el despliegue limpio en EC2
       - name: Levantar Stack de Servicios en EC2
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          REGISTRY_URL: ${{ steps.login-ecr.outputs.registry }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
         with:
           host: ${{ secrets.EC2_HOST_FRONTEND }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
+          envs: REGISTRY_URL,AWS_DEFAULT_REGION
           script: |
             cd /home/ec2-user/app/
 
-            # Autenticar Docker con Amazon ECR
-            aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | \
-              docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
+            # Remover el contenedor inicial del User Data para liberar el puerto 80
+            docker rm -f tienda-frontend || true
 
-            # Inyectar IP pública dinámica para el docker-compose
-            export ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}
+            # Autenticar Docker con Amazon ECR en la máquina remota
+            aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REGISTRY_URL
 
-            # Descargar imágenes y recrear contenedores
+            # Declarar la variable global para que docker-compose la herede
+            export ECR_REGISTRY=$REGISTRY_URL
+
+            # Descargar imágenes y recrear contenedores de manera limpia
             docker compose pull
             docker compose down
+
+            # Limpiar volúmenes antiguos para forzar la recarga del init.sql
+            docker volume rm tienda-db-data || true
+
             docker compose up -d
 
-            echo "🚀 ¡Infraestructura de microservicios actualizada con éxito!"
+            echo "🚀 ¡Infraestructura de microservicios unificada actualizada con éxito!"
